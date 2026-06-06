@@ -1,0 +1,29 @@
+name: Pin install.sh commit in README
+
+on:
+  push:
+    branches: [main]
+    paths: ['install.sh']
+
+permissions:
+  contents: write
+
+jobs:
+  pin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update pinned fallback commit
+        run: |
+          SHA="$(git rev-parse HEAD)"
+          # Only the commit-pinned URL has a hex sha; the `main` URL is left alone.
+          sed -i -E "s|(dotnix-bootstrap/)[0-9a-f]{7,40}(/install\.sh)|\1${SHA}\2|" README.md
+          if git diff --quiet README.md; then
+            echo "README already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "readme: pin install.sh fallback to ${SHA}"
+          git push
