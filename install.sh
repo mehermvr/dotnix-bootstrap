@@ -62,10 +62,14 @@ echo "$PUBKEY"
 echo "=========================================================="
 
 # Probe SSH first — if the key is already on GitHub, skip the paste prompt.
+# `ssh -T git@github.com` always exits non-zero (GitHub grants no shell), so a
+# bare `ssh | grep` pipeline would return that failure under `set -o pipefail`
+# even on success. Capture the output first, then match it.
 ssh_authed() {
-  ssh -T -o StrictHostKeyChecking=accept-new -o BatchMode=yes \
-      -o ConnectTimeout=5 git@github.com 2>&1 \
-    | grep -q "successfully authenticated"
+  local out
+  out="$(ssh -T -o StrictHostKeyChecking=accept-new -o BatchMode=yes \
+             -o ConnectTimeout=5 git@github.com 2>&1 || true)"
+  printf '%s' "$out" | grep -q "successfully authenticated"
 }
 
 if ssh_authed; then
